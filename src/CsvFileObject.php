@@ -18,14 +18,16 @@ namespace BlackwoodSeven\File;
  *   ['column1 header' => 'value 4', 'column2 header' => 'value 5', 'column3 header' => 'value 6'],
  * ]
  */
-class CsvFileObject extends \SplFileObject implements \JsonSerializable
+class CsvFileObject extends \SplFileObject implements \JsonSerializable, \Countable
 {
     /**
      * The fields of a row.
      *
      * @var array
      */
-     protected $fields;
+    protected $fields;
+
+    public $rows;
 
     /**
      * SplFileObject constructor.
@@ -80,6 +82,15 @@ class CsvFileObject extends \SplFileObject implements \JsonSerializable
         return $fieldedRow;
     }
 
+    public function valid()
+    {
+        $valid = parent::valid();
+        if (!$valid && !isset($this->rows) && !is_null($this->key())) {
+            $this->rows = $this->key();
+        }
+        return $valid;
+    }
+
     /**
      * Subtract 1 row from index, so that we don't include the header in our count.
      */
@@ -89,10 +100,33 @@ class CsvFileObject extends \SplFileObject implements \JsonSerializable
     }
 
     /**
+     * Add 1 to skip the header when seeking.
+     */
+    public function seek($position)
+    {
+        if ($position < 0) {
+            throw new \LogicException("Can't seek file " . $this->getFilename() . " to negative line $position");
+        }
+        return parent::seek($position + 1);
+    }
+
+    /**
      * Implements jsonSerialize.
      */
     public function jsonSerialize()
     {
         return iterator_to_array($this);
+    }
+
+    /**
+     * Implements Countable.
+     */
+    public function count()
+    {
+        if (!isset($this->rows)) {
+            $this->seek($this->getSize());
+            $this->rows = $this->key();
+        }
+        return $this->rows;
     }
 }
