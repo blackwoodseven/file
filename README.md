@@ -23,6 +23,8 @@ $fields = array_keys(reset($data));
 
 ```php
 
+use BlackwoodSeven\File\AtomicTempFileObject;
+
 $newFile = new AtomicTempFileObject('my-output.csv');
 $newFile->putcsv($fields);
 
