@@ -7,7 +7,14 @@ class CsvFileObjectUnitTest extends \PHPUnit_Framework_TestCase
 {
     protected $fixturesPath = __DIR__ . '/fixtures';
 
-    public function dataProvider()
+    public function dataProviderHasNoData()
+    {
+        return [
+            [$this->fixturesPath . '/csvfile3-input', $this->fixturesPath . '/csvfile3-result'],
+        ];
+    }
+
+    public function dataProviderHasData()
     {
         return [
             [$this->fixturesPath . '/csvfile1-input', $this->fixturesPath . '/csvfile1-result'],
@@ -16,7 +23,8 @@ class CsvFileObjectUnitTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @dataProvider dataProvider()
+     * @dataProvider dataProviderHasData()
+     * @dataProvider dataProviderHasNoData()
      */
     public function testCsvParsing($csvFile, $expectedResultFile)
     {
@@ -25,7 +33,7 @@ class CsvFileObjectUnitTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @dataProvider dataProvider()
+     * @dataProvider dataProviderHasData()
      */
     public function testCsvFields($csvFile, $expectedResultFile)
     {
@@ -36,7 +44,8 @@ class CsvFileObjectUnitTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @dataProvider dataProvider()
+     * @dataProvider dataProviderHasData()
+     * @dataProvider dataProviderHasNoData()
      */
     public function testCsvCount($csvFile, $expectedResultFile)
     {
