@@ -1,0 +1,23 @@
+{
+    "name": "blackwoodseven/file",
+    "type": "library",
+    "description": "File functionality.",
+    "keywords": ["file", "atomic", "temp"],
+    "homepage": "https://github.com/blackwoodseven/file",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Thomas Gielfeldt",
+            "email": "tg@blackwoodseven.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.0.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^5.2"
+    },
+    "autoload": {
+        "psr-4": { "BlackwoodSeven\\File\\": "src/" }
+    }
+}
