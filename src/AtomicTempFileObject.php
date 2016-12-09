@@ -11,13 +11,23 @@ class AtomicTempFileObject extends \SplFileObject
     /**
      * Constructor.
      */
-    public function __construct($filename, $tempDir = null, $tempPrefix = null, $mTime = null)
+    public function __construct($filename)
     {
-        $tempDir = $tempDir ?? sys_get_temp_dir();
-        $tempPrefix = $tempPrefix ?? 'AtomicTempFileObject';
+        $tempDir = dirname(realpath($filename));
+        $tempPrefix = 'AtomicTempFileObject';
         $this->destinationRealPath = $filename;
+        parent::__construct(tempnam($tempDir, $tempPrefix), "w+");
+    }
+
+    /**
+     * Set modified time stamp of persistent file.
+     *
+     * @param int $mTime
+     *   File modification time in unix timestamp.
+     */
+    public function setModifiedTime($mTime)
+    {
         $this->mTime = $mTime;
-        parent::__construct(tempnam($tempDir, $tempPrefix), "w");
     }
 
     /**
