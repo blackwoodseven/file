@@ -14,7 +14,7 @@ class AtomicTempFileObject extends \SplFileObject
     public function __construct($filename)
     {
         $tempDir = dirname(realpath($filename));
-        $tempPrefix = 'AtomicTempFileObject';
+        $tempPrefix = basename($filename) . '.AtomicTempFileObject.';
         $this->destinationRealPath = $filename;
         parent::__construct(tempnam($tempDir, $tempPrefix), "w+");
     }
