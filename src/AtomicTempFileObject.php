@@ -43,6 +43,7 @@ class AtomicTempFileObject extends \SplFileObject
      */
     public function __destruct()
     {
+        $this->fflush();
         if ($this->persist && !$this->compare($this->destinationRealPath)) {
             if (isset($this->mTime)) {
                 touch($this->getRealPath(), $this->mTime);
