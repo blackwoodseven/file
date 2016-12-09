@@ -43,11 +43,14 @@ class AtomicTempFileObject extends \SplFileObject
      */
     public function __destruct()
     {
-        if ($this->persist) {
+        if ($this->persist && !$this->compare($this->destinationRealPath)) {
             if (isset($this->mTime)) {
                 touch($this->getRealPath(), $this->mTime);
             }
             rename($this->getRealPath(), $this->destinationRealPath);
+        }
+        else {
+            unlink($this->getRealPath());
         }
     }
 
@@ -62,5 +65,44 @@ class AtomicTempFileObject extends \SplFileObject
         $tempFile->fwrite($data);
         $tempFile->persistOnClose();
         unset($tempFile);
+    }
+
+    /**
+     * File comparison
+     *
+     * @param string $filename
+     *   The file to check against.
+     *
+     * @return bool
+     *   True if the contents of this file matches the contents of $filename.
+     */
+    public function compare($filename)
+    {
+        if (!file_exists($filename)) {
+            return false;
+        }
+
+        // This is a temp file opened for writing and truncated to begin with,
+        // so we assume that the current position is the size of the new file.
+        $pos = $this->ftell();
+
+        $file = new \SplFileObject($filename, 'r');
+        if ($pos <> $file->getSize()) {
+            return false;
+        }
+
+        // Rewind this temp file and compare it with the specified file.
+        $identical = true;
+        $this->fseek(0);
+        while(!$file->eof()) {
+            if($file->fread(8192) != $this->fread(8192)) {
+                $identical = false;
+                break;
+            }
+        }
+
+        // Reset file pointer to end of file.
+        $this->fseek($pos);
+        return $identical;
     }
 }
