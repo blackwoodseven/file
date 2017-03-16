@@ -3,11 +3,11 @@ namespace BlackwoodSeven\Tests\File;
 
 use BlackwoodSeven\File\AtomicTempFileObject;
 
-class AtomicTempFileObjectUnitTest extends \PHPUnit_Framework_TestCase
+class AtomicTempFileObjectUnitTest extends BlackwoodSevenFileUnitTestBase
 {
     public function testPersist()
     {
-        $filename = tempnam(sys_get_temp_dir(), 'AtomicTempFileObjectUnitTest');
+        $filename = $this->tempnam();
 
         $file = new AtomicTempFileObject($filename);
         $file->fwrite("TEST1");
@@ -20,7 +20,7 @@ class AtomicTempFileObjectUnitTest extends \PHPUnit_Framework_TestCase
 
     public function testPersistIfChanged()
     {
-        $filename = tempnam(sys_get_temp_dir(), 'AtomicTempFileObjectUnitTest');
+        $filename = $this->tempnam();
 
         $file = new AtomicTempFileObject($filename);
         $file->fwrite("TEST1");
@@ -46,7 +46,7 @@ class AtomicTempFileObjectUnitTest extends \PHPUnit_Framework_TestCase
 
     public function testModificationTime()
     {
-        $filename = tempnam(sys_get_temp_dir(), 'AtomicTempFileObjectUnitTest');
+        $filename = $this->tempnam();
 
         $mTime = time() - 86400;
 
@@ -64,5 +64,37 @@ class AtomicTempFileObjectUnitTest extends \PHPUnit_Framework_TestCase
         unset($file);
 
         $this->assertLessThan(filemtime($filename), $mTime, 'File\'s modification time was not correctly set.');
+    }
+
+    public function testCreateDirectory()
+    {
+        $dirname = $this->tempdirnam();
+        $filename = $dirname . '/testsubdir/testfile';
+
+        $file = new AtomicTempFileObject($filename);
+        $file->fwrite("TEST1");
+        $file->createDirectoryOnPersist();
+        $file->persistOnClose();
+        unset($file);
+
+        $this->assertEquals(5, filesize($filename), 'File is not correctly persisted - size.');
+        $this->assertEquals("TEST1", file_get_contents($filename), 'File is not correctly persisted - content.');
+    }
+
+    /**
+     * Test proper exception thrown if create directory is not set.
+     *
+     * @expectedException \RuntimeException
+     * @expectedExceptionMessageRegExp  /^Could not move /
+     */
+    public function testCreateDirectoryFail()
+    {
+        $dirname = $this->tempdirnam();
+        $filename = $dirname . '/testsubdir/testfile';
+
+        $file = new AtomicTempFileObject($filename);
+        $file->fwrite("TEST1");
+        $file->persistOnClose();
+        unset($file);
     }
 }

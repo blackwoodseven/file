@@ -3,10 +3,8 @@ namespace BlackwoodSeven\Tests\File;
 
 use BlackwoodSeven\File\CsvFileObject;
 
-class CsvFileObjectUnitTest extends \PHPUnit_Framework_TestCase
+class CsvFileObjectUnitTest extends BlackwoodSevenFileUnitTestBase
 {
-    protected $fixturesPath = __DIR__ . '/fixtures';
-
     public function dataProviderHasNoData()
     {
         return [

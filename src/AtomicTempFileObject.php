@@ -5,7 +5,8 @@ namespace BlackwoodSeven\File;
 class AtomicTempFileObject extends \SplFileObject
 {
     protected $destinationRealPath;
-    protected $mTime;
+    protected $mTime = false;
+    protected $mode = false;
     protected $persist = false;
 
     /**
@@ -19,6 +20,11 @@ class AtomicTempFileObject extends \SplFileObject
         parent::__construct(tempnam($tempDir, $tempPrefix), "w+");
     }
 
+    public function getDestinationPathname()
+    {
+        return $this->destinationRealPath;
+    }
+
     /**
      * Set modified time stamp of persistent file.
      *
@@ -28,6 +34,16 @@ class AtomicTempFileObject extends \SplFileObject
     public function setModifiedTime($mTime)
     {
         $this->mTime = $mTime;
+        return $this;
+    }
+
+    /**
+     * Auto create directory for destination file upon persist.
+     */
+    public function createDirectoryOnPersist($mode = 0777)
+    {
+        $this->mode = $mode;
+        return $this;
     }
 
     /**
@@ -36,6 +52,7 @@ class AtomicTempFileObject extends \SplFileObject
     public function persistOnClose($persist = true)
     {
         $this->persist = $persist;
+        return $this;
     }
 
     /**
@@ -45,13 +62,31 @@ class AtomicTempFileObject extends \SplFileObject
     {
         $this->fflush();
         if ($this->persist && !$this->compare($this->destinationRealPath)) {
-            if (isset($this->mTime)) {
-                touch($this->getRealPath(), $this->mTime);
+            if ($this->mTime !== false) {
+                if (!@touch($this->getRealPath(), $this->mTime)) {
+                    $last_error = error_get_last();
+                    throw new \RuntimeException(sprintf("Could not set modified time on %s to %d - message: %s",
+                        $this->getRealPath(), $this->mTime, $last_error['message']
+                    ));
+                }
             }
-            rename($this->getRealPath(), $this->destinationRealPath);
-        }
-        else {
-            unlink($this->getRealPath());
+            if ($this->mode !== false) {
+                $path = dirname($this->destinationRealPath);
+                if (!file_exists($path)) {
+                    if (!@mkdir($path, $this->mode, true)) {
+                        $last_error = error_get_last();
+                        throw new \RuntimeException(sprintf("Could create directories for %s - message: %s",
+                            $this->getRealPath(), $last_error['message']
+                        ));
+                    }
+                }
+            }
+            if (!@rename($this->getRealPath(), $this->destinationRealPath)) {
+                $last_error = error_get_last();
+                throw new \RuntimeException(sprintf("Could not move %s to %s - message: %s",
+                    $this->getRealPath(), $this->destinationRealPath, $last_error['message']
+                ));
+            }
         }
     }
 

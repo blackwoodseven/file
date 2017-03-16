@@ -20,5 +20,8 @@
     "minimum-stability": "dev",
     "autoload": {
         "psr-4": { "BlackwoodSeven\\File\\": "src/" }
+    },
+    "autoload-dev": {
+        "psr-4": { "BlackwoodSeven\\Tests\\File\\": "tests/" }
     }
 }
