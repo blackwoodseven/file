@@ -97,4 +97,30 @@ class AtomicTempFileObjectUnitTest extends BlackwoodSevenFileUnitTestBase
         $file->persistOnClose();
         unset($file);
     }
+
+    public function testProcess()
+    {
+        $txtFile = $this->fixturesPath . '/txtfile1-input';
+        $txtFileObject = new \SplFileObject($txtFile);
+
+        $dirname = $this->tempdirnam();
+
+        $destFile = new AtomicTempFileObject($dirname . '/txtfile1-result');
+        $destFile->process($txtFileObject, function ($line, $lineNum, $input, $output) use ($dirname) {
+            $no = ($lineNum % 2);
+            if ($no == 0) {
+                $output->fwrite($line);
+            }
+        });
+        $destFile->createDirectoryOnPersist();
+        $destFile->persistOnClose();
+        unset($destFile);
+
+        $this->assertTrue(file_exists($dirname . '/txtfile1-result'), 'File was not written.');
+
+        $expected = file_get_contents($this->fixturesPath . '/txtfile1-result');
+        $result = file_get_contents($dirname . '/txtfile1-result');
+        $this->assertEquals($expected, $result, 'File was not processed correctly.');
+    }
+
 }

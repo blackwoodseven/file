@@ -105,6 +105,22 @@ class AtomicTempFileObject extends \SplFileObject
     }
 
     /**
+     * Easy access iterator apply for processing an entire file.
+     *
+     * @param  Iterator $input    [description]
+     * @param  callable $callback [description]
+     */
+    public function process(\Iterator $input, callable $callback)
+    {
+        $input->rewind();
+        iterator_apply($input, function (\Iterator $iterator) use ($callback) {
+            call_user_func($callback, $iterator->current(), $iterator->key(), $iterator, $this);
+            return true;
+        }, [$input]);
+        return $this;
+    }
+
+    /**
      * Atomic file_put_contents().
      *
      * @see file_put_contents()
