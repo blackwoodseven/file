@@ -37,3 +37,23 @@ unset($newfile);
 
 ```
 
+
+## Usage: AtomicTempFileObjects
+
+```php
+
+use BlackwoodSeven\File\CsvFileObject;
+use BlackwoodSeven\File\AtomicTempFileObjects;
+
+$inputFile = new CsvFileObject('my-input.csv');
+$outputFiles = new AtomicTempFileObjects();
+
+$outputFiles->splitCsvFile($inputFile, function ($row) {
+    // Return filename to use for the specific row.
+    return 'my-output.' . $row['date'] . '.csv';
+});
+
+$outputFiles->persistOnClose();
+unset($outputFiles);
+
+```
