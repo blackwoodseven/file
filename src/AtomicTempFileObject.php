@@ -94,6 +94,14 @@ class AtomicTempFileObject extends \SplFileObject
                 ));
             }
         }
+        else {
+            if (!@unlink($this->getRealPath())) {
+                $last_error = error_get_last();
+                throw new \RuntimeException(sprintf("Could not remove %s - message: %s",
+                    $this->getRealPath(), $last_error['message']
+                ));
+            }
+        }
     }
 
     /**
