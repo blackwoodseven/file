@@ -7,7 +7,7 @@ class BlackwoodSevenFileUnitTestBase extends \PHPUnit_Framework_TestCase
     public $tempFiles = [];
     public $tempDirs = [];
 
-    public function __destruct()
+    public function tearDown()
     {
         $this->cleanupTempFiles();
     }
@@ -20,6 +20,7 @@ class BlackwoodSevenFileUnitTestBase extends \PHPUnit_Framework_TestCase
         foreach ($this->tempFiles as $tmpFile) {
             unlink($tmpFile);
         }
+        $this->tempFiles = [];
 
         foreach ($this->tempDirs as $tmpDir) {
             $files = new \RecursiveIteratorIterator(
@@ -33,6 +34,7 @@ class BlackwoodSevenFileUnitTestBase extends \PHPUnit_Framework_TestCase
             }
             rmdir($tmpDir);
         }
+        $this->tempDirs = [];
     }
 
     /**

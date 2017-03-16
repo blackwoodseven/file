@@ -20,7 +20,13 @@ class AtomicTempFileObject extends \SplFileObject
         parent::__construct(tempnam($tempDir, $tempPrefix), "w+");
     }
 
-    public function getDestinationPathname()
+    /**
+     * Get the destination real path.
+     *
+     * @return string
+     *   The real path of the destination.
+     */
+    public function getDestinationRealPath(): string
     {
         return $this->destinationRealPath;
     }
@@ -31,7 +37,7 @@ class AtomicTempFileObject extends \SplFileObject
      * @param int $mTime
      *   File modification time in unix timestamp.
      */
-    public function setModifiedTime($mTime)
+    public function setModifiedTime($mTime): AtomicTempFileObject
     {
         $this->mTime = $mTime;
         return $this;
@@ -49,7 +55,7 @@ class AtomicTempFileObject extends \SplFileObject
     /**
      * Move temp file into the destination upon object desctruction.
      */
-    public function persistOnClose($persist = true)
+    public function persistOnClose($persist = true): AtomicTempFileObject
     {
         $this->persist = $persist;
         return $this;
@@ -112,7 +118,7 @@ class AtomicTempFileObject extends \SplFileObject
      * @return bool
      *   True if the contents of this file matches the contents of $filename.
      */
-    public function compare($filename)
+    public function compare($filename): bool
     {
         if (!file_exists($filename)) {
             return false;

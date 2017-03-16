@@ -3,7 +3,7 @@
 namespace BlackwoodSeven\File;
 
 /**
- * Create multiple csv files in same format based on custom condition.
+ * Create multiple atomic temp files.
  */
 class AtomicTempFileObjects
 {
@@ -83,10 +83,11 @@ class AtomicTempFileObjects
      */
     public function addFile($file): AtomicTempFileObject
     {
-        if ($this->isFileOpen($file->getDestinationPathname())) {
-            throw new \Exception("File: " . $file->getDestinationPathname() . " already opened!");
+        $realPath = $file->getDestinationRealPath();
+        if ($this->isFileOpen($realPath)) {
+            throw new \Exception("File: " . $realPath . " already opened!");
         }
-        $this->files[$file->getDestinationPathname()] = $file;
+        $this->files[$realPath] = $file;
         return $this;
     }
 
@@ -99,18 +100,32 @@ class AtomicTempFileObjects
      *   A callback returning the filename for the specific row.
      * @return
      */
-    public function splitCsvFile(CsvFileObject $input, callable $callback) {
-        foreach ($input as $row) {
-            $fileName = call_user_func($callback, $row);
-            if (!$this->isFileOpen($fileName)) {
-                $file = $this->openFile($fileName);
-                $file->fputcsv(array_keys($row));
+    public function splitCsvFile(CsvFileObject $input, callable $callback)
+    {
+        $this->process($input, function ($row, $rowNum, $input, $output) use ($callback) {
+            if ($fileName = call_user_func_array($callback, [&$row])) {
+                if (!$output->isFileOpen($fileName)) {
+                    $output->openFile($fileName)->fputcsv(array_keys($row));
+                }
+                $output->getFile($fileName)->fputcsv(array_values($row));
             }
-            else {
-                $file = $this->getFile($fileName);
-            }
-            $file->fputcsv($row);
-        }
+        });
+        return $this;
+    }
+
+    /**
+     * Easy access iterator apply for processing an entire file.
+     *
+     * @param  Iterator $input    [description]
+     * @param  callable $callback [description]
+     */
+    public function process(\Iterator $input, callable $callback)
+    {
+        $input->rewind();
+        iterator_apply($input, function (\Iterator $iterator) use ($callback) {
+            call_user_func($callback, $iterator->current(), $iterator->key(), $iterator, $this);
+            return true;
+        }, [$input]);
         return $this;
     }
 
