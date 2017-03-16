@@ -31,6 +31,7 @@ class BlackwoodSevenFileUnitTestBase extends \PHPUnit_Framework_TestCase
                 $todo = ($fileinfo->isDir() ? 'rmdir' : 'unlink');
                 $todo($fileinfo->getRealPath());
             }
+            rmdir($tmpDir);
         }
     }
 
