@@ -48,9 +48,34 @@ use BlackwoodSeven\File\AtomicTempFileObjects;
 $inputFile = new CsvFileObject('my-input.csv');
 $outputFiles = new AtomicTempFileObjects();
 
-$outputFiles->splitCsvFile($inputFile, function ($row) {
+// Split a csv file into multiple files.
+$outputFiles->splitCsvFile($inputFile, function (&$row) {
+    // $row is by reference and can be modified.
+    $row = mapTheRowAsIWantItToBe($row);
+
     // Return filename to use for the specific row.
     return 'my-output.' . $row['date'] . '.csv';
+});
+
+$outputFiles->persistOnClose();
+unset($outputFiles);
+
+```
+
+```php
+
+use BlackwoodSeven\File\CsvFileObject;
+use BlackwoodSeven\File\AtomicTempFileObjects;
+
+$inputFile = new \SplFileObject('my-input.csv');
+$outputFiles = new AtomicTempFileObjects();
+
+// Split a file into two files containing odd and even lines.
+$outputFiles->process($inputFile, function ($line, $lineNum, $input, $output) {
+    $no = ($lineNum % 2);
+    $fileName = 'my-output.' . ($no ? 'even' : 'odd') . '.txt';
+    $file = $output->isFileOpen($fileName) ? $output->getFile($fileName) : $output->openFile($fileName);
+    $file->fwrite($line);
 });
 
 $outputFiles->persistOnClose();
