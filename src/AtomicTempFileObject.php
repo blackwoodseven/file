@@ -12,6 +12,8 @@ class AtomicTempFileObject extends \SplFileObject
     protected $mTime = false;
     protected $mode = false;
     protected $persist = 0;
+    protected $onPersistCallback;
+    protected $onDiscardCallback;
 
     /**
      * Constructor.
@@ -65,6 +67,16 @@ class AtomicTempFileObject extends \SplFileObject
         return $this;
     }
 
+    public function onPersist(callable $callback)
+    {
+        $this->onPersistCallback = $callback;
+    }
+
+    public function onDiscard(callable $callback)
+    {
+        $this->onDiscardCallback = $callback;
+    }
+
     private function doPersist()
     {
         if ($this->mTime !== false) {
@@ -92,6 +104,9 @@ class AtomicTempFileObject extends \SplFileObject
                 $this->getRealPath(), $this->destinationRealPath, $last_error['message']
             ));
         }
+        if ($this->onPersistCallback) {
+            call_user_func($this->onPersistCallback, $this);
+        }
     }
 
     private function doDiscard()
@@ -101,6 +116,9 @@ class AtomicTempFileObject extends \SplFileObject
             throw new \RuntimeException(sprintf("Could not remove %s - message: %s",
                 $this->getRealPath(), $last_error['message']
             ));
+        }
+        if ($this->onDiscardCallback) {
+            call_user_func($this->onDiscardCallback, $this);
         }
     }
 

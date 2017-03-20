@@ -156,6 +156,62 @@ class AtomicTempFileObjectUnitTest extends BlackwoodSevenFileUnitTestBase
         unset($file);
     }
 
+    public function testOnPersist()
+    {
+        $filename = $this->tempnam();
+        $check = [];
+        $file = new AtomicTempFileObject($filename);
+        $check[$file->getDestinationRealPath()] = true;
+        $file->fwrite("TEST1");
+        $file->persistOnClose();
+        $file->onPersist(function ($file) use (&$check) {
+            $check[$file->getDestinationRealPath()] = false;
+        });
+        unset($file);
+
+        $this->assertEmpty(array_filter($check), 'On persist callback was not executed.');
+
+        $check = [];
+        $file = new AtomicTempFileObject($filename);
+        $check[$file->getDestinationRealPath()] = true;
+        $file->fwrite("TEST1");
+        $file->persistOnClose();
+        $file->onPersist(function ($file) use (&$check) {
+            $check[$file->getDestinationRealPath()] = false;
+        });
+        unset($file);
+
+        $this->assertNotEmpty(array_filter($check), 'On persist callback was executed.');
+    }
+
+    public function testOnDiscard()
+    {
+        $filename = $this->tempnam();
+        $check = [];
+        $file = new AtomicTempFileObject($filename);
+        $check[$file->getDestinationRealPath()] = true;
+        $file->fwrite("TEST1");
+        $file->persistOnClose();
+        $file->onDiscard(function ($file) use (&$check) {
+            $check[$file->getDestinationRealPath()] = false;
+        });
+        unset($file);
+
+        $this->assertNotEmpty(array_filter($check), 'On discard callback was not executed.');
+
+        $check = [];
+        $file = new AtomicTempFileObject($filename);
+        $check[$file->getDestinationRealPath()] = true;
+        $file->fwrite("TEST1");
+        $file->persistOnClose(AtomicTempFileObject::DISCARD);
+        $file->onDiscard(function ($file) use (&$check) {
+            $check[$file->getDestinationRealPath()] = false;
+        });
+        unset($file);
+
+        $this->assertEmpty(array_filter($check), 'On discard callback was executed.');
+    }
+
     public function testProcess()
     {
         $txtFile = $this->fixturesPath . '/txtfile1-input';
