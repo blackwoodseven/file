@@ -94,13 +94,13 @@ class AtomicTempFileObjects
     /**
      * Split a csv file into multiple csv files.
      *
-     * @param  CsvFileObject $input
-     *   The input to split.
+     * @param  Iterator $input
+     *   The input to split. Each row must contain an array of key value pairs.
      * @param  callable $callback
      *   A callback returning the filename for the specific row.
      * @return
      */
-    public function splitCsvFile(CsvFileObject $input, callable $callback)
+    public function splitCsvFile(\Iterator $input, callable $callback)
     {
         $this->process($input, function ($row, $rowNum, $input, $output) use ($callback) {
             if ($fileName = call_user_func_array($callback, [&$row])) {
@@ -116,8 +116,10 @@ class AtomicTempFileObjects
     /**
      * Easy access iterator apply for processing an entire file.
      *
-     * @param  Iterator $input    [description]
-     * @param  callable $callback [description]
+     * @param  Iterator $input
+     *   The input to split.
+     * @param  callable $callback
+     *   Callback for each item in iterator.
      */
     public function process(\Iterator $input, callable $callback)
     {
