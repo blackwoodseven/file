@@ -4,15 +4,19 @@ namespace BlackwoodSeven\File;
 
 class AtomicTempFileObject extends \SplFileObject
 {
+    const DISCARD = 1;
+    const PERSIST = 2;
+    const PERSIST_UNCHANGED = 4;
+
     protected $destinationRealPath;
     protected $mTime = false;
     protected $mode = false;
-    protected $persist = false;
+    protected $persist = 0;
 
     /**
      * Constructor.
      */
-    public function __construct($filename)
+    public function __construct(string $filename)
     {
         $tempDir = dirname(realpath($filename));
         $tempPrefix = basename($filename) . '.AtomicTempFileObject.';
@@ -55,10 +59,49 @@ class AtomicTempFileObject extends \SplFileObject
     /**
      * Move temp file into the destination upon object desctruction.
      */
-    public function persistOnClose($persist = true): AtomicTempFileObject
+    public function persistOnClose($persist = self::PERSIST): AtomicTempFileObject
     {
         $this->persist = $persist;
         return $this;
+    }
+
+    private function doPersist()
+    {
+        if ($this->mTime !== false) {
+            if (!@touch($this->getRealPath(), $this->mTime)) {
+                $last_error = error_get_last();
+                throw new \RuntimeException(sprintf("Could not set modified time on %s to %d - message: %s",
+                    $this->getRealPath(), $this->mTime, $last_error['message']
+                ));
+            }
+        }
+        if ($this->mode !== false) {
+            $path = dirname($this->destinationRealPath);
+            if (!file_exists($path)) {
+                if (!@mkdir($path, $this->mode, true)) {
+                    $last_error = error_get_last();
+                    throw new \RuntimeException(sprintf("Could create directories for %s - message: %s",
+                        $this->getRealPath(), $last_error['message']
+                    ));
+                }
+            }
+        }
+        if (!@rename($this->getRealPath(), $this->destinationRealPath)) {
+            $last_error = error_get_last();
+            throw new \RuntimeException(sprintf("Could not move %s to %s - message: %s",
+                $this->getRealPath(), $this->destinationRealPath, $last_error['message']
+            ));
+        }
+    }
+
+    private function doDiscard()
+    {
+        if (!@unlink($this->getRealPath())) {
+            $last_error = error_get_last();
+            throw new \RuntimeException(sprintf("Could not remove %s - message: %s",
+                $this->getRealPath(), $last_error['message']
+            ));
+        }
     }
 
     /**
@@ -67,40 +110,19 @@ class AtomicTempFileObject extends \SplFileObject
     public function __destruct()
     {
         $this->fflush();
-        if ($this->persist && !$this->compare($this->destinationRealPath)) {
-            if ($this->mTime !== false) {
-                if (!@touch($this->getRealPath(), $this->mTime)) {
-                    $last_error = error_get_last();
-                    throw new \RuntimeException(sprintf("Could not set modified time on %s to %d - message: %s",
-                        $this->getRealPath(), $this->mTime, $last_error['message']
-                    ));
-                }
+        if ($this->persist & (self::PERSIST | self::PERSIST_UNCHANGED)) {
+            if ($this->persist & self::PERSIST_UNCHANGED || !$this->compare($this->destinationRealPath)) {
+                $this->doPersist();
             }
-            if ($this->mode !== false) {
-                $path = dirname($this->destinationRealPath);
-                if (!file_exists($path)) {
-                    if (!@mkdir($path, $this->mode, true)) {
-                        $last_error = error_get_last();
-                        throw new \RuntimeException(sprintf("Could create directories for %s - message: %s",
-                            $this->getRealPath(), $last_error['message']
-                        ));
-                    }
-                }
-            }
-            if (!@rename($this->getRealPath(), $this->destinationRealPath)) {
-                $last_error = error_get_last();
-                throw new \RuntimeException(sprintf("Could not move %s to %s - message: %s",
-                    $this->getRealPath(), $this->destinationRealPath, $last_error['message']
-                ));
+            else {
+                $this->doDiscard();
             }
         }
+        elseif ($this->persist & self::DISCARD) {
+            $this->doDiscard();
+        }
         else {
-            if (!@unlink($this->getRealPath())) {
-                $last_error = error_get_last();
-                throw new \RuntimeException(sprintf("Could not remove %s - message: %s",
-                    $this->getRealPath(), $last_error['message']
-                ));
-            }
+            trigger_error("Temp file left on device: " . $this->getRealPath(), E_USER_WARNING);
         }
     }
 

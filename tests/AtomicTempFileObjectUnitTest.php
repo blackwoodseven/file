@@ -34,7 +34,7 @@ class AtomicTempFileObjectUnitTest extends BlackwoodSevenFileUnitTestBase
         $file->persistOnClose();
         unset($file);
 
-        $this->assertEquals($originalINode, fileinode($filename), 'File was not correctly not persisted.');
+        $this->assertEquals($originalINode, fileinode($filename), 'File was not correctly discarded.');
 
         $file = new AtomicTempFileObject($filename);
         $file->fwrite("TEST2");
@@ -42,6 +42,64 @@ class AtomicTempFileObjectUnitTest extends BlackwoodSevenFileUnitTestBase
         unset($file);
 
         $this->assertNotEquals($originalINode, fileinode($filename), 'File was not correctly persisted.');
+    }
+
+    public function testPersistIfNotChanged()
+    {
+        $filename = $this->tempnam();
+
+        $file = new AtomicTempFileObject($filename);
+        $file->fwrite("TEST1");
+        $file->persistOnClose();
+        unset($file);
+
+        $originalINode = fileinode($filename);
+
+        $file = new AtomicTempFileObject($filename);
+        $file->fwrite("TEST1");
+        $file->persistOnClose(AtomicTempFileObject::PERSIST_UNCHANGED);
+        unset($file);
+
+        $this->assertNotEquals($originalINode, fileinode($filename), 'File was not correctly persisted.');
+
+        $file = new AtomicTempFileObject($filename);
+        $file->fwrite("TEST2");
+        $file->persistOnClose();
+        unset($file);
+
+        $this->assertNotEquals($originalINode, fileinode($filename), 'File was not correctly persisted.');
+    }
+
+    public function testDiscard()
+    {
+        $filename = $this->tempnam();
+
+        $file = new AtomicTempFileObject($filename);
+        $file->fwrite("TEST1");
+        $file->persistOnClose();
+        unset($file);
+
+        $originalINode = fileinode($filename);
+
+        $file = new AtomicTempFileObject($filename);
+        $file->fwrite("TEST2");
+        $file->persistOnClose(AtomicTempFileObject::DISCARD);
+        unset($file);
+
+        $this->assertEquals($originalINode, fileinode($filename), 'File was not correctly discarded.');
+    }
+
+    /**
+     * @expectedException PHPUnit_Framework_Error_Warning
+     */
+    public function testPersistWarning()
+    {
+        $filename = $this->tempnam();
+
+        $file = new AtomicTempFileObject($filename);
+        $this->tempFiles[] = $file->getRealPath();
+        $file->fwrite("TEST1");
+        unset($file);
     }
 
     public function testModificationTime()
